@@ -43,22 +43,29 @@ namespace Bastion
         public readonly List<Mission> Missions = new List<Mission>();
         public readonly List<string> Log = new List<string>();
 
-        public Speed Speed = Speed.One;
+        public Speed Speed = Speed.Pause;
         public string Toast;
         public float ToastT;
         public Action<string> OnToast;
         public Action<string, string, string, Action, Action> OnModal;
 
-        public float FoodPerDay => 8f + (CisternBuilt ? 0f : 0f) + 6f;
-        public float WaterPerDay => (CisternBuilt ? 16f : 5f);
+        public float FoodPerDay => 14f;
+        public float WaterPerDay => CisternBuilt ? 16f : 5f;
         public float FoodUse => Pop * 0.45f;
         public float WaterUse => Pop * 0.52f;
+        public float FoodDelta => FoodPerDay - FoodUse;
+        public float WaterDelta => WaterPerDay - WaterUse;
+
+        public GameSim()
+        {
+            ToastNow("Ration math is ugly. Raise a cistern on Wire Street.");
+        }
 
         public void ToastNow(string msg)
         {
             Toast = msg;
             ToastT = 4.2f;
-            Log.Insert(0, $"[Day {Day}] {msg}");
+            Log.Insert(0, "[Day " + Day + "] " + msg);
             if (Log.Count > 24) Log.RemoveAt(Log.Count - 1);
             OnToast?.Invoke(msg);
         }
@@ -76,11 +83,11 @@ namespace Bastion
         void AdvanceDay()
         {
             Day++;
-            Food += FoodPerDay - FoodUse;
-            Water += WaterPerDay - WaterUse;
+            Food += FoodDelta;
+            Water += WaterDelta;
             Power += 3f - Pop * 0.08f;
             Morale += (AshPosted ? 1.2f : -0.6f) + (Water < 0f ? -3f : 0.4f);
-            if (!AshPosted) OrderAsh = Mathf.Max(0, OrderAsh - 6);
+            if (!AshPosted) OrderAsh = Mathf.Max(0, OrderAsh - 3);
             else OrderAsh = Mathf.Min(100, OrderAsh + 8);
 
             if (CisternQueued && !CisternBuilt)
@@ -103,6 +110,13 @@ namespace Bastion
                 Missions.RemoveAt(i);
             }
 
+            if (CisternBuilt && Food > 30f && Water > 20f && Pop < 48 && Day % 5 == 0)
+            {
+                Pop += 1;
+                ToastNow("Another mouth at the ration table. Pop +1.");
+            }
+
+            EventDeck.Maybe(this);
             if (Water < 0f) ToastNow("Ration line forming.");
             if (Food < 0f) ToastNow("Stores are thin.");
             Food = Mathf.Clamp(Food, -20f, 200f);
@@ -137,7 +151,26 @@ namespace Bastion
             WardensIdle -= n;
             Peacekeepers += n;
             AshPosted = true;
-            ToastNow("Beat's quiet.");
+            OrderAsh = Mathf.Min(100, OrderAsh + 18);
+            ToastNow("Ash Row beat is posted. Order +18.");
+            return true;
+        }
+
+        public bool RecruitWarden()
+        {
+            if (Scrap < 14f)
+            {
+                ToastNow("Need 14 scrap to kit a Warden.");
+                return false;
+            }
+            if (Pop - WardensIdle - Peacekeepers - OnStrike < 4)
+            {
+                ToastNow("The city cannot spare another coat.");
+                return false;
+            }
+            Scrap -= 14f;
+            WardensIdle += 1;
+            ToastNow("New coat on the line. Wardens +1.");
             return true;
         }
 
