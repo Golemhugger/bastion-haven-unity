@@ -4,7 +4,7 @@ namespace Bastion
 {
     public static class BastionArt
     {
-        static Texture2D _brick, _asphalt, _canvas, _metal, _glass, _window, _wood, _dirt;
+        static Texture2D _brick, _asphalt, _canvas, _metal, _glass, _window, _wood, _dirt, _roof, _rust;
 
         public static Material Brick() => TexMat(ref _brick, PaintBrick, new Color(0.36f, 0.28f, 0.22f), 0f, 0.28f);
         public static Material Asphalt() => TexMat(ref _asphalt, PaintAsphalt, new Color(0.12f, 0.12f, 0.14f), 0f, 0.55f);
@@ -14,6 +14,8 @@ namespace Bastion
         public static Material Window() => TexMat(ref _window, PaintWindow, new Color(1f, 0.72f, 0.38f), 2.2f, 0.4f);
         public static Material Wood() => TexMat(ref _wood, PaintWood, new Color(0.32f, 0.22f, 0.14f), 0f, 0.22f);
         public static Material Dirt() => TexMat(ref _dirt, PaintDirt, new Color(0.18f, 0.15f, 0.12f), 0f, 0.2f);
+        public static Material Roof() => TexMat(ref _roof, PaintRoof, new Color(0.24f, 0.22f, 0.20f), 0f, 0.15f);
+        public static Material Rust() => TexMat(ref _rust, PaintRust, new Color(0.42f, 0.22f, 0.12f), 0f, 0.25f);
 
         static Material TexMat(ref Texture2D tex, System.Action<Texture2D> paint, Color fallback, float emit, float smooth)
         {
@@ -21,11 +23,11 @@ namespace Bastion
             {
                 tex = new Texture2D(64, 64, TextureFormat.RGBA32, false);
                 tex.wrapMode = TextureWrapMode.Repeat;
-                tex.filterMode = FilterMode.Point;
+                tex.filterMode = FilterMode.Bilinear;
                 paint(tex);
                 tex.Apply();
             }
-            var m = BastionGfx.Mat(fallback, emit, smooth);
+            var m = BastionGfx.Mat(fallback, emit);
             if (m.HasProperty("_BaseMap")) m.SetTexture("_BaseMap", tex);
             if (m.HasProperty("_MainTex")) m.SetTexture("_MainTex", tex);
             return m;
@@ -128,6 +130,30 @@ namespace Bastion
             {
                 float n = rng.Next(0, 24) / 255f;
                 t.SetPixel(x, y, new Color(0.16f + n, 0.13f + n * 0.7f, 0.10f + n * 0.4f));
+            }
+        }
+
+        static void PaintRoof(Texture2D t)
+        {
+            var rng = new System.Random(41);
+            for (int y = 0; y < 64; y++)
+            for (int x = 0; x < 64; x++)
+            {
+                float n = rng.Next(0, 18) / 255f;
+                var c = new Color(0.18f + n, 0.16f + n, 0.14f + n);
+                if (y % 8 < 2) c *= 0.7f;
+                t.SetPixel(x, y, c);
+            }
+        }
+
+        static void PaintRust(Texture2D t)
+        {
+            var rng = new System.Random(17);
+            for (int y = 0; y < 64; y++)
+            for (int x = 0; x < 64; x++)
+            {
+                float n = rng.Next(0, 28) / 255f;
+                t.SetPixel(x, y, new Color(0.38f + n, 0.18f + n * 0.5f, 0.10f));
             }
         }
     }
