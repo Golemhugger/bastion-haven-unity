@@ -1,42 +1,51 @@
 ---
 name: unity-playtest-bot
-description: Write command lists for a Grok Bot that can open Unity, click HUD, screenshot, and quit. Use when the user says paste to Steward, playtest, or give the bot commands.
+description: Write command lists for a Grok Bot that opens Unity, clicks HUD, screenshots, and quits. Use when the user says Steward, playtest, or paste commands.
 metadata:
   author: bastion-haven
-  short-description: Editor bot playtest lists
+  short-description: Editor bot lists that actually click
 ---
 
 # Unity Playtest Bot
 
-One paste block. Numbered. Observable checks only. Quit Unity at the end.
+One paste block. Numbered. Observable checks. Quit Unity at the end.
 
-## Always include
+## Why clicks miss
 
-- Project path
-- Do not add URP / Cinemachine / NavMesh / .exe
-- Maximize Game view before Play
-- Start paused on Day 1. If Day is stale, click New Game
-- Named clicks that change HUD numbers
-- Screenshot Game view, not Scene view
-- File → Exit Unity
-- Fixed report template
+- Game view not maximized — HUD buttons sit under Inspector / Hierarchy.
+- Bot stares at a screenshot instead of clicking the Game view.
+- First click hits Load F9 because New Game is clipped.
+- Space / Shift+Space is bound as speed and advances the day.
+- Unity left in leftover Play (Day 89) — numbers look like the click did nothing.
+- AFK 4x overnight is not a playtest.
+
+## Always
+
+1. Unity closed before a drop.
+2. Drop only the files named in the list.
+3. Open. Confirm 0 red. Exit Safe Mode if needed.
+4. Maximize Game view. Hide Console overlay.
+5. Play paused Day 1. New Game if Day is stale.
+6. Named clicks. Named screenshots of Game view.
+7. Do not re-test beats already signed off this week.
+8. File → Exit Unity.
 
 ## Never
 
-- manage / make it better with no pass-fail
+- "manage" / "make it better" with no pass-fail
 - 4x overnight
-- leave Play running
-- treat an AFK Day-100 screenshot as a click-through
+- leave Play running on a laptop
+- treat an AFK Day-100 shot as a click-through
+- drop nightpack + tomorrow + LATEST in one pass
 
 ## Report template
 
 ```
 Play result:
+- red / pink:
 - paused Day 1:
 - clicks that worked:
 - clicks that failed:
-- Day / Water / Food / Order / Scrap / Wardens:
-- pink / Console red:
-- screenshot notes:
+- named visual (shack / beds / sparks / lobby):
 - Unity closed:
 ```
