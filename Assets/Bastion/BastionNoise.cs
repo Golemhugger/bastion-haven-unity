@@ -2,10 +2,6 @@ using UnityEngine;
 
 namespace Bastion
 {
-    /// <summary>
-    /// Deterministic 2D noise. No allocations after first call.
-    /// Range of Value / Perlin / Fbm is roughly 0..1 unless noted.
-    /// </summary>
     public static class BastionNoise
     {
         static readonly int[] Perm = new int[512];
@@ -78,6 +74,9 @@ namespace Bastion
             return Lerp(x1, x2, v) * 0.5f + 0.5f;
         }
 
+        public static float Value2(float x, float y, int seed = 0) { Seed(seed == 0 ? 1337 : seed); return Value(x, y); }
+        public static float Perlin2(float x, float y, int seed = 0) { Seed(seed == 0 ? 1337 : seed); return Perlin(x, y); }
+
         public static float Fbm(float x, float y, int octaves = 4, float lacunarity = 2f, float gain = 0.5f)
         {
             float amp = 0.5f;
@@ -141,11 +140,31 @@ namespace Bastion
             return Fbm(w.x, w.y, octaves);
         }
 
+        public static float ZeroOne(float n) => Mathf.Clamp01(n);
+        public static float ZeroOne(float x, float y) => Mathf.Clamp01(Fbm(x, y, 4));
+        public static float ZeroOne(float x, float y, int octaves) => Mathf.Clamp01(Fbm(x, y, octaves));
+
+        public static Color Tint(Color a, Color b, float t) => Color.Lerp(a, b, Mathf.Clamp01(t));
+        public static Color Tint(Color baseColor, float n) => Color.Lerp(baseColor, Color.white, Mathf.Clamp01(n) * 0.25f);
+
         public static Color Lerp3(Color a, Color b, Color c, float t)
         {
             t = Mathf.Clamp01(t);
             if (t < 0.5f) return Color.Lerp(a, b, t * 2f);
             return Color.Lerp(b, c, (t - 0.5f) * 2f);
+        }
+
+        public static Texture2D Bake(int size, System.Func<float, float, Color> sample)
+        {
+            size = Mathf.Clamp(size, 8, 256);
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Repeat;
+            tex.filterMode = FilterMode.Bilinear;
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+                tex.SetPixel(x, y, sample(x / (float)size, y / (float)size));
+            tex.Apply();
+            return tex;
         }
     }
 }
